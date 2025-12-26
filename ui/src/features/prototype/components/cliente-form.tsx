@@ -36,7 +36,6 @@ export function ClienteForm({ onSubmit, onCancel, initialData }: Props) {
         fechaVencimiento: "",
         estado: "activo",
         tipoMembresia: "mensual",
-        foto: "",
         contactoEmergencia: "",
         observaciones: "",
       },
@@ -91,11 +90,6 @@ export function ClienteForm({ onSubmit, onCancel, initialData }: Props) {
           <Input id="telefono" {...register("telefono", { required: "El teléfono es requerido" })} placeholder="+506 8888-8888" className="rounded-xl" />
           {formState.errors.telefono && <p className="text-sm text-red-600">{formState.errors.telefono.message}</p>}
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="foto">URL de Foto (opcional)</Label>
-        <Input id="foto" type="url" {...register("foto")} placeholder="https://..." className="rounded-xl" />
       </div>
 
       <div className="space-y-2">
@@ -171,4 +165,3 @@ export function ClienteForm({ onSubmit, onCancel, initialData }: Props) {
     </form>
   );
 }
-

@@ -9,7 +9,6 @@ import { ClienteForm } from './ClienteForm';
 import { ClienteDetailDialog } from './ClienteDetailDialog';
 import { ClienteReporteDialog } from './ClienteReporteDialog';
 import type { Cliente, Pago, Medicion } from '../App';
-import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface ClientesTabProps {
   clientes: Cliente[];
@@ -240,38 +239,25 @@ export function ClientesTab({ clientes, setClientes, allClientes, pagos, medicio
                   {clientesFiltrados.map((cliente) => (
                     <TableRow key={cliente.id} className="hover:bg-gray-50 transition-colors">
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          {cliente.foto ? (
-                            <ImageWithFallback
-                              src={cliente.foto}
-                              alt={`${cliente.nombre} ${cliente.apellido}`}
-                              className="w-12 h-12 rounded-xl object-cover shadow-md"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#ff5e62] to-[#ff9966] flex items-center justify-center text-white font-bold shadow-md">
-                              {cliente.nombre[0]}{cliente.apellido[0]}
-                            </div>
-                          )}
-                          <div>
-                            <div className="font-bold text-gray-900">
-                              {cliente.nombre} {cliente.apellido}
-                            </div>
-                            <div className="flex gap-2 mt-1">
-                              <button
-                                onClick={() => openDetailDialog(cliente)}
-                                className="text-xs text-[#ff5e62] hover:underline flex items-center gap-1 font-semibold"
-                              >
-                                <FileText className="h-3 w-3" />
-                                Ver Cliente
-                              </button>
-                              <button
-                                onClick={() => openReporteDialog(cliente)}
-                                className="text-xs text-[#ff9966] hover:underline flex items-center gap-1 font-semibold"
-                              >
-                                <BarChart3 className="h-3 w-3" />
-                                Reporte
-                              </button>
-                            </div>
+                        <div>
+                          <div className="font-bold text-gray-900">
+                            {cliente.nombre} {cliente.apellido}
+                          </div>
+                          <div className="flex gap-2 mt-1">
+                            <button
+                              onClick={() => openDetailDialog(cliente)}
+                              className="text-xs text-[#ff5e62] hover:underline flex items-center gap-1 font-semibold"
+                            >
+                              <FileText className="h-3 w-3" />
+                              Ver Cliente
+                            </button>
+                            <button
+                              onClick={() => openReporteDialog(cliente)}
+                              className="text-xs text-[#ff9966] hover:underline flex items-center gap-1 font-semibold"
+                            >
+                              <BarChart3 className="h-3 w-3" />
+                              Reporte
+                            </button>
                           </div>
                         </div>
                       </TableCell>

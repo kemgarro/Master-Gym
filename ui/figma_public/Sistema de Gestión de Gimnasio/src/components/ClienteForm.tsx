@@ -23,7 +23,6 @@ export function ClienteForm({ onSubmit, onCancel, initialData }: ClienteFormProp
       fechaVencimiento: '',
       estado: 'activo',
       tipoMembresia: 'mensual',
-      foto: '',
       contactoEmergencia: '',
       observaciones: '',
     },
@@ -109,17 +108,6 @@ export function ClienteForm({ onSubmit, onCancel, initialData }: ClienteFormProp
             <p className="text-red-600 text-sm">{errors.telefono.message}</p>
           )}
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="foto">URL de Foto (opcional)</Label>
-        <Input
-          id="foto"
-          type="url"
-          {...register('foto')}
-          placeholder="https://ejemplo.com/foto.jpg"
-          className="rounded-xl"
-        />
       </div>
 
       <div className="space-y-2">

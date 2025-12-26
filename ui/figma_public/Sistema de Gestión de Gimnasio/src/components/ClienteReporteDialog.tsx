@@ -2,7 +2,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Download, Mail, Phone, Calendar, CreditCard, TrendingDown, Activity } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Cliente, Pago, Medicion } from '../App';
@@ -121,19 +120,8 @@ export function ClienteReporteDialog({ cliente, open, onOpenChange, pagos, medic
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Header con foto */}
-          <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-[#ffe5e6] to-[#ffe5cc] rounded-2xl">
-            {cliente.foto ? (
-              <ImageWithFallback
-                src={cliente.foto}
-                alt={`${cliente.nombre} ${cliente.apellido}`}
-                className="w-20 h-20 rounded-2xl object-cover shadow-lg"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#ff5e62] to-[#ff9966] flex items-center justify-center text-white font-black shadow-lg" style={{ fontSize: '1.5rem' }}>
-                {cliente.nombre[0]}{cliente.apellido[0]}
-              </div>
-            )}
+          {/* Header del cliente */}
+          <div className="p-6 bg-gradient-to-r from-[#ffe5e6] to-[#ffe5cc] rounded-2xl">
             <div className="flex-1">
               <h3 className="font-black text-gray-900" style={{ fontSize: '1.5rem' }}>
                 {cliente.nombre} {cliente.apellido}

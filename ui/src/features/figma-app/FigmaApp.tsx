@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Activity, AlertCircle, DollarSign, Search, Users } from "lucide-react";
+import { AlertCircle, Database, DollarSign, Search, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,8 @@ import type {
   ClientResponse,
   ClientStatus,
   ClientUpdateRequest,
+  MeasurementCreateRequest,
+  MeasurementResponse,
   Page,
   PaymentCreateRequest,
   PaymentMethod,
@@ -23,20 +25,15 @@ import type {
 import { ClientesTab } from "./components/ClientesTab";
 import { MedicionesTab } from "./components/MedicionesTab";
 import { PagosTab } from "./components/PagosTab";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import gymLogo from "../../../recursos/logo.jpg";
 import type { Cliente, ClienteFormData, Medicion, Pago } from "./types";
 
-type ClienteExtras = Pick<Cliente, "foto" | "contactoEmergencia">;
+type ClienteExtras = Pick<Cliente, "contactoEmergencia">;
 
 const LS_CLIENT_EXTRAS = "mastergym-client-extras";
-const LS_MEDICIONES = "mastergym-mediciones";
-
 const colones = new Intl.NumberFormat("es-CR", { style: "currency", currency: "CRC", maximumFractionDigits: 0 });
 
-const HEADER_IMAGE =
-  "https://images.unsplash.com/photo-1710746904773-73e073fd1549" +
-  "?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxneW0lMjBmaXRuZXNzJTIwbG9nb3xlbnwxfHx8fDE3NjM2MDQyMzl8MA" +
-  "&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
+const HEADER_IMAGE = gymLogo.src;
 
 function safeReadJson<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -132,6 +129,9 @@ export function FigmaApp({ defaultTab }: { defaultTab?: "clientes" | "pagos" | "
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uiError, setUiError] = useState<string | null>(null);
+  const [backupNotice, setBackupNotice] = useState<{ title: string; message: string } | null>(null);
+  const [lastBackupAt, setLastBackupAt] = useState<string | null>(null);
+  const [backupLoading, setBackupLoading] = useState(false);
 
   const [clientExtras, setClientExtras] = useState<Record<string, ClienteExtras>>({});
   const [mediciones, setMediciones] = useState<Medicion[]>([]);
@@ -140,27 +140,42 @@ export function FigmaApp({ defaultTab }: { defaultTab?: "clientes" | "pagos" | "
 
   useEffect(() => {
     setClientExtras(safeReadJson<Record<string, ClienteExtras>>(LS_CLIENT_EXTRAS, {}));
-    setMediciones(safeReadJson<Medicion[]>(LS_MEDICIONES, []));
+    setLastBackupAt(safeReadJson<string | null>("mastergym-last-backup", null));
   }, []);
 
   useEffect(() => {
     safeWriteJson(LS_CLIENT_EXTRAS, clientExtras);
   }, [clientExtras]);
 
-  useEffect(() => {
-    safeWriteJson(LS_MEDICIONES, mediciones);
-  }, [mediciones]);
-
   async function loadAll() {
     setLoading(true);
     setError(null);
     try {
-      const [clientsPage, paymentsPage] = await Promise.all([
+      const [clientsPage, paymentsPage, measurementsPage] = await Promise.all([
         apiGet<Page<ClientResponse>>("/api/clients?page=0&size=200&sort=fechaRegistro,desc"),
         apiGet<Page<PaymentResponse>>("/api/payments?page=0&size=200&sort=paymentDate,desc"),
+        apiGet<Page<MeasurementResponse>>("/api/measurements?page=0&size=500&sort=fecha,desc"),
       ]);
       setBackendClients(clientsPage.content);
       setBackendPayments(paymentsPage.content);
+      setMediciones(
+        measurementsPage.content.map((m) => ({
+          id: String(m.id),
+          clienteId: String(m.clientId),
+          fecha: m.fecha,
+          peso: m.peso,
+          altura: m.altura,
+          pechoCm: m.pechoCm,
+          cinturaCm: m.cinturaCm,
+          caderaCm: m.caderaCm,
+          brazoIzqCm: m.brazoIzqCm,
+          brazoDerCm: m.brazoDerCm,
+          piernaIzqCm: m.piernaIzqCm,
+          piernaDerCm: m.piernaDerCm,
+          grasaCorporal: m.grasaCorporal ?? undefined,
+          notas: m.notas ?? undefined,
+        }))
+      );
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error cargando datos";
       setError(msg);
@@ -204,7 +219,6 @@ export function FigmaApp({ defaultTab }: { defaultTab?: "clientes" | "pagos" | "
         fechaVencimiento,
         estado: computeEstado(c.estado, c.fechaVencimiento),
         tipoMembresia,
-        foto: extras?.foto || undefined,
         contactoEmergencia: extras?.contactoEmergencia || undefined,
         observaciones: c.notas ?? undefined,
       };
@@ -241,6 +255,7 @@ export function FigmaApp({ defaultTab }: { defaultTab?: "clientes" | "pagos" | "
   const clientesActivos = clientesAll.filter((c) => c.estado === "activo" || c.estado === "por-vencer").length;
   const clientesVencidos = clientesAll.filter((c) => c.estado === "vencido").length;
   const clientesPorVencer = clientesAll.filter((c) => c.estado === "por-vencer").length;
+  const clientesInactivos = clientesAll.filter((c) => c.estado === "inactivo").length;
 
   const ingresosMes = pagosAll
     .filter((p) => {
@@ -265,7 +280,6 @@ export function FigmaApp({ defaultTab }: { defaultTab?: "clientes" | "pagos" | "
     setClientExtras((prev) => ({
       ...prev,
       [String(created.id)]: {
-        foto: cliente.foto,
         contactoEmergencia: cliente.contactoEmergencia,
       },
     }));
@@ -288,7 +302,6 @@ export function FigmaApp({ defaultTab }: { defaultTab?: "clientes" | "pagos" | "
     setClientExtras((prev) => ({
       ...prev,
       [clienteId]: {
-        foto: cliente.foto,
         contactoEmergencia: cliente.contactoEmergencia,
       },
     }));
@@ -370,6 +383,65 @@ export function FigmaApp({ defaultTab }: { defaultTab?: "clientes" | "pagos" | "
     await loadAll();
   }
 
+  async function handleCreateMedicion(medicion: Omit<Medicion, "id">) {
+    setError(null);
+    const request: MeasurementCreateRequest = {
+      clientId: Number(medicion.clienteId),
+      fecha: medicion.fecha,
+      peso: Number(medicion.peso),
+      altura: Number(medicion.altura),
+      pechoCm: Number(medicion.pechoCm),
+      cinturaCm: Number(medicion.cinturaCm),
+      caderaCm: Number(medicion.caderaCm),
+      brazoIzqCm: Number(medicion.brazoIzqCm),
+      brazoDerCm: Number(medicion.brazoDerCm),
+      piernaIzqCm: Number(medicion.piernaIzqCm),
+      piernaDerCm: Number(medicion.piernaDerCm),
+      grasaCorporal: medicion.grasaCorporal !== undefined ? Number(medicion.grasaCorporal) : undefined,
+      notas: medicion.notas,
+    };
+    await apiSend<MeasurementResponse>("/api/measurements", "POST", request);
+    await loadAll();
+  }
+
+  async function handleDeleteMedicion(id: string) {
+    setError(null);
+    await apiSend<void>(`/api/measurements/${Number(id)}`, "DELETE");
+    await loadAll();
+  }
+
+  async function handleBackup() {
+    if (backupLoading) return;
+    const ok = confirm("Deseas iniciar el respaldo en la nube ahora?");
+    if (!ok) return;
+    setBackupLoading(true);
+    try {
+      const token = process.env.NEXT_PUBLIC_BACKUP_TOKEN?.trim();
+      const response = await apiSend<{ success: boolean; exitCode: number; output?: string }>(
+        "/api/backup",
+        "POST",
+        undefined,
+        token ? { headers: { "X-BACKUP-TOKEN": token } } : undefined
+      );
+      if (!response.success) {
+        setBackupNotice({
+          title: "Error de respaldo",
+          message: response.output?.trim() || "No se pudo ejecutar el respaldo.",
+        });
+      } else {
+        const now = new Date().toISOString();
+        safeWriteJson("mastergym-last-backup", now);
+        setLastBackupAt(now);
+        setBackupNotice({ title: "Respaldo completado", message: "La copia en la nube se actualizo correctamente." });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error al ejecutar el respaldo";
+      setBackupNotice({ title: "Error de respaldo", message: msg });
+    } finally {
+      setBackupLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Dialog open={uiError !== null} onOpenChange={(open) => (!open ? setUiError(null) : null)}>
@@ -385,12 +457,25 @@ export function FigmaApp({ defaultTab }: { defaultTab?: "clientes" | "pagos" | "
           </div>
         </DialogContent>
       </Dialog>
+      <Dialog open={backupNotice !== null} onOpenChange={(open) => (!open ? setBackupNotice(null) : null)}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>{backupNotice?.title}</DialogTitle>
+            <DialogDescription>{backupNotice?.message}</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button onClick={() => setBackupNotice(null)} className="rounded-xl bg-gradient-to-r from-[#ff5e62] to-[#ff9966] text-white">
+              Entendido
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <div className="bg-gradient-to-r from-[#ff5e62] to-[#ff9966] shadow-xl">
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="rounded-2xl bg-white p-3 shadow-lg">
-                <ImageWithFallback src={HEADER_IMAGE} alt="MasterGym Logo" className="h-12 w-12 rounded-xl object-cover" />
+                <img src={HEADER_IMAGE} alt="MasterGym Logo" className="h-12 w-12 rounded-xl object-cover" />
               </div>
               <div>
                 <h1 className="font-black tracking-tight text-white" style={{ fontSize: "2rem" }}>
@@ -411,6 +496,19 @@ export function FigmaApp({ defaultTab }: { defaultTab?: "clientes" | "pagos" | "
                   <AlertCircle className="h-4 w-4" />
                   {clientesVencidos} vencida{clientesVencidos !== 1 ? "s" : ""}
                 </Badge>
+              )}
+              <Button
+                onClick={handleBackup}
+                disabled={backupLoading}
+                className="rounded-xl bg-white px-4 py-2 text-[#ff5e62] shadow-md transition hover:bg-white/90 disabled:opacity-70"
+              >
+                <Database className="mr-2 h-4 w-4" />
+                {backupLoading ? "Respaldando..." : "Respaldar"}
+              </Button>
+              {lastBackupAt && (
+                <span className="text-sm text-white/90">
+                  Ultimo respaldo: {new Date(lastBackupAt).toLocaleString("es-CR")}
+                </span>
               )}
             </div>
           </div>
@@ -476,31 +574,49 @@ export function FigmaApp({ defaultTab }: { defaultTab?: "clientes" | "pagos" | "
 
           <Card className="border-none bg-gradient-to-br from-white to-gray-50 shadow-lg transition-all duration-300 hover:shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm text-gray-600">Mediciones</CardTitle>
-              <div className="rounded-xl bg-gradient-to-br from-[#ff5e62] to-[#ff9966] p-2">
-                <Activity className="h-5 w-5 text-white" />
+              <CardTitle className="text-sm text-gray-600">Clientes Inactivos</CardTitle>
+              <div className="rounded-xl bg-gradient-to-br from-[#ff9966] to-[#ff5e62] p-2">
+                <AlertCircle className="h-5 w-5 text-white" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="font-black text-gray-900" style={{ fontSize: "2rem" }}>
-                {mediciones.length}
+                {clientesInactivos}
               </div>
-              <p className="mt-2 text-sm text-gray-600">Solo UI (local)</p>
+              <p className="mt-2 text-sm text-gray-600">Sin membresia activa</p>
             </CardContent>
           </Card>
 
                   </div>
 
         <Tabs defaultValue={defaultTab ?? "clientes"} className="space-y-6">
-          <TabsList className="h-auto rounded-2xl border-none bg-white p-1.5 shadow-md">
-            <TabsTrigger value="clientes" className="rounded-xl px-6 py-3 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff5e62] data-[state=active]:to-[#ff9966] data-[state=active]:text-white data-[state=active]:shadow-lg">
+          <TabsList className="h-auto overflow-visible rounded-2xl border-none bg-white p-1.5 shadow-md">
+            <TabsTrigger
+              value="clientes"
+              className="group relative rounded-xl px-6 py-3 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff5e62] data-[state=active]:to-[#ff9966] data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
               Clientes
+              <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max -translate-x-1/2 rounded-xl bg-gradient-to-r from-[#ff5e62] to-[#ff9966] px-3 py-2 text-xs font-semibold text-white shadow-lg opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-1">
+                Gestiona perfiles, estado y contacto de clientes.
+              </span>
             </TabsTrigger>
-            <TabsTrigger value="pagos" className="rounded-xl px-6 py-3 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff5e62] data-[state=active]:to-[#ff9966] data-[state=active]:text-white data-[state=active]:shadow-lg">
+            <TabsTrigger
+              value="pagos"
+              className="group relative rounded-xl px-6 py-3 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff5e62] data-[state=active]:to-[#ff9966] data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
               Pagos
+              <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max -translate-x-1/2 rounded-xl bg-gradient-to-r from-[#ff5e62] to-[#ff9966] px-3 py-2 text-xs font-semibold text-white shadow-lg opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-1">
+                Registra pagos y revisa el historial de transacciones.
+              </span>
             </TabsTrigger>
-            <TabsTrigger value="mediciones" className="rounded-xl px-6 py-3 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff5e62] data-[state=active]:to-[#ff9966] data-[state=active]:text-white data-[state=active]:shadow-lg">
+            <TabsTrigger
+              value="mediciones"
+              className="group relative rounded-xl px-6 py-3 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#ff5e62] data-[state=active]:to-[#ff9966] data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
               Mediciones
+              <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max -translate-x-1/2 rounded-xl bg-gradient-to-r from-[#ff5e62] to-[#ff9966] px-3 py-2 text-xs font-semibold text-white shadow-lg opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-1">
+                Guarda y consulta mediciones fisicas de los clientes.
+              </span>
             </TabsTrigger>
           </TabsList>
 
@@ -526,7 +642,12 @@ export function FigmaApp({ defaultTab }: { defaultTab?: "clientes" | "pagos" | "
             />
           </TabsContent>
           <TabsContent value="mediciones">
-            <MedicionesTab mediciones={mediciones} setMediciones={setMediciones} clientes={clientesAll} />
+            <MedicionesTab
+              mediciones={mediciones}
+              clientes={clientesAll}
+              onCreateMedicion={handleCreateMedicion}
+              onDeleteMedicion={handleDeleteMedicion}
+            />
           </TabsContent>
         </Tabs>
       </div>

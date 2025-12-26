@@ -5,7 +5,6 @@ import { Users, DollarSign, TrendingUp, Activity, AlertCircle, Search } from 'lu
 import { ClientesTab } from './components/ClientesTab';
 import { PagosTab } from './components/PagosTab';
 import { MedicionesTab } from './components/MedicionesTab';
-import { ImageWithFallback } from './components/figma/ImageWithFallback';
 import { Badge } from './components/ui/badge';
 import { Input } from './components/ui/input';
 
@@ -19,7 +18,6 @@ export interface Cliente {
   fechaVencimiento: string;
   estado: 'activo' | 'vencido' | 'por-vencer' | 'inactivo';
   tipoMembresia: 'mensual' | 'trimestral' | 'semestral' | 'anual';
-  foto?: string;
   contactoEmergencia?: string;
   observaciones?: string;
 }
@@ -151,12 +149,10 @@ function App() {
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="bg-white rounded-2xl p-3 shadow-lg">
-                <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1710746904773-73e073fd1549?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxneW0lMjBmaXRuZXNzJTIwbG9nb3xlbnwxfHx8fDE3NjM2MDQyMzl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-                  alt="MasterGym Logo"
-                  className="h-12 w-12 object-cover rounded-xl"
-                />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-lg">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff5e62] to-[#ff9966] text-sm font-black text-white">
+                  MG
+                </div>
               </div>
               <div>
                 <h1 className="text-white font-black tracking-tight" style={{ fontSize: '2rem' }}>MasterGym</h1>

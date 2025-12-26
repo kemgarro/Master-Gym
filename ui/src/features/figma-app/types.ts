@@ -8,12 +8,11 @@ export interface Cliente {
   fechaVencimiento: string;
   estado: "activo" | "vencido" | "por-vencer" | "inactivo";
   tipoMembresia: "diario" | "mensual" | "trimestral" | "semestral" | "anual";
-  foto?: string;
   contactoEmergencia?: string;
   observaciones?: string;
 }
 
-export type ClienteFormData = Pick<Cliente, "nombre" | "apellido" | "email" | "telefono" | "foto" | "contactoEmergencia" | "observaciones">;
+export type ClienteFormData = Pick<Cliente, "nombre" | "apellido" | "email" | "telefono" | "contactoEmergencia" | "observaciones">;
 
 export interface Pago {
   id: string;

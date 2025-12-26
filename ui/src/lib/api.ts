@@ -25,11 +25,12 @@ export async function apiGet<T>(path: string): Promise<T> {
 export async function apiSend<T>(
   path: string,
   method: "POST" | "PUT" | "DELETE",
-  body?: unknown
+  body?: unknown,
+  options?: { headers?: Record<string, string> }
 ): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
-    headers: { "Content-Type": "application/json", ...gymHeaders() },
+    headers: { "Content-Type": "application/json", ...gymHeaders(), ...(options?.headers ?? {}) },
     body: body ? JSON.stringify(body) : undefined,
   });
 

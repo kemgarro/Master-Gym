@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ImageWithFallback } from "../figma/ImageWithFallback";
 import type { Cliente, Medicion, Pago } from "../types";
 
 interface ClienteReporteDialogProps {
@@ -130,19 +129,7 @@ export function ClienteReporteDialog({ cliente, open, onOpenChange, pagos, medic
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-[#ffe5e6] to-[#ffe5cc] p-6">
-            {cliente.foto ? (
-              <ImageWithFallback
-                src={cliente.foto}
-                alt={`${cliente.nombre} ${cliente.apellido}`}
-                className="h-20 w-20 rounded-2xl object-cover shadow-lg"
-              />
-            ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ff5e62] to-[#ff9966] text-2xl font-bold text-white shadow-lg">
-                {cliente.nombre[0]}
-                {cliente.apellido[0]}
-              </div>
-            )}
+          <div className="rounded-2xl bg-gradient-to-r from-[#ffe5e6] to-[#ffe5cc] p-6">
             <div className="flex-1">
               <h3 className="text-2xl font-black text-gray-900">
                 {cliente.nombre} {cliente.apellido}

@@ -3,7 +3,6 @@
 import { AlertCircle, Calendar, CreditCard, Mail, Phone, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ImageWithFallback } from "../figma/ImageWithFallback";
 import type { Cliente } from "../types";
 
 interface ClienteDetailDialogProps {
@@ -22,19 +21,7 @@ export function ClienteDetailDialog({ cliente, open, onOpenChange }: ClienteDeta
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="flex items-center gap-4 border-b pb-6">
-            {cliente.foto ? (
-              <ImageWithFallback
-                src={cliente.foto}
-                alt={`${cliente.nombre} ${cliente.apellido}`}
-                className="h-20 w-20 rounded-2xl object-cover shadow-lg"
-              />
-            ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ff5e62] to-[#ff9966] text-2xl font-bold text-white shadow-lg">
-                {cliente.nombre[0]}
-                {cliente.apellido[0]}
-              </div>
-            )}
+          <div className="border-b pb-6">
             <div className="flex-1">
               <h3 className="text-2xl font-bold text-gray-900">
                 {cliente.nombre} {cliente.apellido}

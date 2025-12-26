@@ -61,6 +61,42 @@ export type PaymentUpdateRequest = {
   paymentDate?: string | null;
 };
 
+export type MeasurementResponse = {
+  id: number;
+  gymId: number;
+  clientId: number;
+  fecha: string;
+  peso: number;
+  altura: number;
+  pechoCm: number;
+  cinturaCm: number;
+  caderaCm: number;
+  brazoIzqCm: number;
+  brazoDerCm: number;
+  piernaIzqCm: number;
+  piernaDerCm: number;
+  grasaCorporal?: number | null;
+  notas?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MeasurementCreateRequest = {
+  clientId: number;
+  fecha: string;
+  peso: number;
+  altura: number;
+  pechoCm: number;
+  cinturaCm: number;
+  caderaCm: number;
+  brazoIzqCm: number;
+  brazoDerCm: number;
+  piernaIzqCm: number;
+  piernaDerCm: number;
+  grasaCorporal?: number;
+  notas?: string;
+};
+
 export type ClientResponse = {
   id: number;
   gymId: number;

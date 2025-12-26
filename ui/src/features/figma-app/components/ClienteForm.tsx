@@ -21,7 +21,6 @@ export function ClienteForm({ onSubmit, onCancel, initialData }: ClienteFormProp
           apellido: initialData.apellido,
           email: initialData.email,
           telefono: initialData.telefono,
-          foto: initialData.foto ?? "",
           contactoEmergencia: initialData.contactoEmergencia ?? "",
           observaciones: initialData.observaciones ?? "",
         }
@@ -30,7 +29,6 @@ export function ClienteForm({ onSubmit, onCancel, initialData }: ClienteFormProp
           apellido: "",
           email: "",
           telefono: "",
-          foto: "",
           contactoEmergencia: "",
           observaciones: "",
         },
@@ -89,11 +87,6 @@ export function ClienteForm({ onSubmit, onCancel, initialData }: ClienteFormProp
           />
           {errors.telefono && <p className="text-sm text-red-600">{errors.telefono.message}</p>}
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="foto">URL de Foto (opcional)</Label>
-        <Input id="foto" type="url" {...register("foto")} placeholder="https://ejemplo.com/foto.jpg" className="rounded-xl" />
       </div>
 
       <div className="space-y-2">

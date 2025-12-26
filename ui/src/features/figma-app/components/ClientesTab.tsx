@@ -2,16 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, Bell, FileText, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Bell, FileText, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ClienteDetailDialog } from "./ClienteDetailDialog";
 import { ClienteForm } from "./ClienteForm";
 import { ClienteReporteDialog } from "./ClienteReporteDialog";
-import { ImageWithFallback } from "../figma/ImageWithFallback";
 import type { Cliente, ClienteFormData, Medicion, Pago } from "../types";
 
 interface ClientesTabProps {
@@ -41,7 +39,6 @@ export function ClientesTab({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [reporteDialogOpen, setReporteDialogOpen] = useState(false);
   const [filter, setFilter] = useState<"todos" | "activos" | "vencidos" | "por-vencer">("todos");
 
@@ -77,11 +74,6 @@ export function ClientesTab({
   const openEditDialog = (cliente: Cliente) => {
     setEditingCliente(cliente);
     setDialogOpen(true);
-  };
-
-  const openDetailDialog = (cliente: Cliente) => {
-    setSelectedCliente(cliente);
-    setDetailDialogOpen(true);
   };
 
   const openReporteDialog = (cliente: Cliente) => {
@@ -230,25 +222,11 @@ export function ClientesTab({
                   {clientesFiltrados.map((cliente) => (
                     <TableRow key={cliente.id} className="transition-colors hover:bg-gray-50">
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          {cliente.foto ? (
-                            <ImageWithFallback
-                              src={cliente.foto}
-                              alt={`${cliente.nombre} ${cliente.apellido}`}
-                              className="h-12 w-12 rounded-xl object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff5e62] to-[#ff9966] font-bold text-white">
-                              {cliente.nombre[0]}
-                              {cliente.apellido[0]}
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-semibold text-gray-900">
-                              {cliente.nombre} {cliente.apellido}
-                            </p>
-                            <p className="text-sm text-gray-600">ID: {cliente.id}</p>
-                          </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {cliente.nombre} {cliente.apellido}
+                          </p>
+                          <p className="text-sm text-gray-600">ID: {cliente.id}</p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -269,56 +247,55 @@ export function ClientesTab({
                         </div>
                       </TableCell>
                       <TableCell>{getEstadoBadge(cliente.estado, cliente.fechaVencimiento)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => router.push("/dashboard?tab=pagos")}
-                            className="rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700"
-                            aria-label="Renovar membresia"
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                          </Button>
+                      <TableCell className="text-right overflow-visible">
+                        <div className="flex justify-end gap-2 overflow-visible">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEnviarRecordatorio(cliente.id)}
-                            className="rounded-xl text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                            className="group relative rounded-xl text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                            aria-label="Enviar recordatorio"
                           >
                             <Bell className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openDetailDialog(cliente)}
-                            className="rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-700"
-                          >
-                            <BarChart3 className="h-4 w-4" />
+                            <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max -translate-x-1/2 rounded-xl bg-gradient-to-r from-[#ff5e62] to-[#ff9966] px-3 py-2 text-xs font-semibold text-white shadow-lg opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:-translate-y-1">
+                              Enviar recordatorio
+                            </span>
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => openReporteDialog(cliente)}
-                            className="rounded-xl text-[#ff5e62] hover:bg-[#ffe5e6] hover:text-[#ff5e62]"
+                            className="group relative rounded-xl text-[#ff5e62] hover:bg-[#ffe5e6] hover:text-[#ff5e62]"
+                            aria-label="Reporte del cliente"
                           >
                             <FileText className="h-4 w-4" />
+                            <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max -translate-x-1/2 rounded-xl bg-gradient-to-r from-[#ff5e62] to-[#ff9966] px-3 py-2 text-xs font-semibold text-white shadow-lg opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:-translate-y-1">
+                              Reporte del cliente
+                            </span>
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => openEditDialog(cliente)}
-                            className="rounded-xl text-[#ff5e62] hover:bg-[#ffe5e6] hover:text-[#ff5e62]"
+                            className="group relative rounded-xl text-[#ff5e62] hover:bg-[#ffe5e6] hover:text-[#ff5e62]"
+                            aria-label="Editar cliente"
                           >
                             <Pencil className="h-4 w-4" />
+                            <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max -translate-x-1/2 rounded-xl bg-gradient-to-r from-[#ff5e62] to-[#ff9966] px-3 py-2 text-xs font-semibold text-white shadow-lg opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:-translate-y-1">
+                              Editar cliente
+                            </span>
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteCliente(cliente.id)}
-                            className="rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700"
+                            className="group relative rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700"
+                            aria-label="Eliminar cliente"
                           >
                             <Trash2 className="h-4 w-4" />
+                            <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max -translate-x-1/2 rounded-xl bg-gradient-to-r from-[#ff5e62] to-[#ff9966] px-3 py-2 text-xs font-semibold text-white shadow-lg opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:-translate-y-1">
+                              Eliminar cliente
+                            </span>
                           </Button>
                         </div>
                       </TableCell>
@@ -333,7 +310,6 @@ export function ClientesTab({
 
       {selectedCliente && (
         <>
-          <ClienteDetailDialog cliente={selectedCliente} open={detailDialogOpen} onOpenChange={setDetailDialogOpen} />
           <ClienteReporteDialog
             cliente={selectedCliente}
             open={reporteDialogOpen}

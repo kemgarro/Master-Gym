@@ -11,7 +11,6 @@ export type Cliente = {
   fechaVencimiento: string;
   estado: ClientState;
   tipoMembresia: MembershipType;
-  foto?: string;
   contactoEmergencia?: string;
   observaciones?: string;
 };
@@ -46,4 +45,3 @@ export type Medicion = {
   grasaCorporal?: number;
   notas?: string;
 };
-

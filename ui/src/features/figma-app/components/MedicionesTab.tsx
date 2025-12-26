@@ -12,24 +12,24 @@ import type { Cliente, Medicion } from "../types";
 
 interface MedicionesTabProps {
   mediciones: Medicion[];
-  setMediciones: (mediciones: Medicion[]) => void;
   clientes: Cliente[];
+  onCreateMedicion: (medicion: Omit<Medicion, "id">) => void | Promise<void>;
+  onDeleteMedicion: (id: string) => void | Promise<void>;
 }
 
-export function MedicionesTab({ mediciones, setMediciones, clientes }: MedicionesTabProps) {
+export function MedicionesTab({ mediciones, clientes, onCreateMedicion, onDeleteMedicion }: MedicionesTabProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedMedicion, setSelectedMedicion] = useState<Medicion | null>(null);
 
-  const handleAddMedicion = (medicion: Omit<Medicion, "id">) => {
-    const nuevaMedicion = { ...medicion, id: crypto.randomUUID() };
-    setMediciones([...mediciones, nuevaMedicion]);
+  const handleAddMedicion = async (medicion: Omit<Medicion, "id">) => {
+    await onCreateMedicion(medicion);
     setDialogOpen(false);
   };
 
-  const handleDeleteMedicion = (id: string) => {
-    if (confirm("¿Estás seguro de eliminar esta medición?")) {
-      setMediciones(mediciones.filter((m) => m.id !== id));
+  const handleDeleteMedicion = async (id: string) => {
+    if (confirm("Estas seguro de eliminar esta medicion?")) {
+      await onDeleteMedicion(id);
     }
   };
 
@@ -177,4 +177,3 @@ export function MedicionesTab({ mediciones, setMediciones, clientes }: Medicione
     </>
   );
 }
-

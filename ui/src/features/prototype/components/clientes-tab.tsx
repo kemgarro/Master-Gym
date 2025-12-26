@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ImageWithFallback } from "@/components/figma/image-with-fallback";
 import { BarChart3, Bell, FileText, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import type { Cliente, Medicion, Pago } from "@/features/prototype/types";
 import { ClienteDetailDialog } from "@/features/prototype/components/cliente-detail-dialog";
@@ -191,39 +190,25 @@ export function ClientesTab({ clientes, setClientes, allClientes, pagos, medicio
                 {clientesFiltrados.map((cliente) => (
                   <TableRow key={cliente.id} className="hover:bg-gray-50 transition-colors">
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        {cliente.foto ? (
-                          <ImageWithFallback
-                            src={cliente.foto}
-                            alt={`${cliente.nombre} ${cliente.apellido}`}
-                            className="h-10 w-10 rounded-xl object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff5e62] to-[#ff9966] text-sm font-bold text-white">
-                            {cliente.nombre[0]}
-                            {cliente.apellido[0]}
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-bold text-gray-900">
-                            {cliente.nombre} {cliente.apellido}
-                          </div>
-                          <div className="mt-1 flex gap-3">
-                            <button
-                              onClick={() => openDetailDialog(cliente)}
-                              className="flex items-center gap-1 text-xs font-semibold text-[#ff5e62] hover:underline"
-                            >
-                              <FileText className="h-3 w-3" />
-                              Ver Cliente
-                            </button>
-                            <button
-                              onClick={() => openReporteDialog(cliente)}
-                              className="flex items-center gap-1 text-xs font-semibold text-[#ff9966] hover:underline"
-                            >
-                              <BarChart3 className="h-3 w-3" />
-                              Reporte
-                            </button>
-                          </div>
+                      <div>
+                        <div className="font-bold text-gray-900">
+                          {cliente.nombre} {cliente.apellido}
+                        </div>
+                        <div className="mt-1 flex gap-3">
+                          <button
+                            onClick={() => openDetailDialog(cliente)}
+                            className="flex items-center gap-1 text-xs font-semibold text-[#ff5e62] hover:underline"
+                          >
+                            <FileText className="h-3 w-3" />
+                            Ver Cliente
+                          </button>
+                          <button
+                            onClick={() => openReporteDialog(cliente)}
+                            className="flex items-center gap-1 text-xs font-semibold text-[#ff9966] hover:underline"
+                          >
+                            <BarChart3 className="h-3 w-3" />
+                            Reporte
+                          </button>
                         </div>
                       </div>
                     </TableCell>
@@ -327,4 +312,3 @@ export function ClientesTab({ clientes, setClientes, allClientes, pagos, medicio
     </>
   );
 }
-
