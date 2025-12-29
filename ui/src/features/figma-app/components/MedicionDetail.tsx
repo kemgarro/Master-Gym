@@ -1,6 +1,9 @@
 "use client";
 
+import { Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { apiDownload } from "@/lib/api";
 import type { Medicion } from "../types";
 
 interface MedicionDetailProps {
@@ -24,8 +27,29 @@ export function MedicionDetail({ medicion, clienteNombre }: MedicionDetailProps)
   const imc = parseFloat(calcularIMC(medicion.peso, medicion.altura));
   const categoria = getIMCCategoria(imc);
 
+  const handleDownloadPdf = async () => {
+    try {
+      const blob = await apiDownload(`/api/measurements/${Number(medicion.id)}/report/pdf`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `medicion_${medicion.id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("No se pudo descargar el PDF.");
+    }
+  };
+
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button onClick={handleDownloadPdf} className="rounded-xl bg-gradient-to-r from-[#ff5e62] to-[#ff9966] text-white shadow-lg">
+          <Download className="mr-2 h-4 w-4" />
+          Descargar PDF
+        </Button>
+      </div>
       <div className="rounded-2xl bg-gradient-to-r from-[#ffe5e6] to-[#ffe5cc] p-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -122,4 +146,3 @@ export function MedicionDetail({ medicion, clienteNombre }: MedicionDetailProps)
     </div>
   );
 }
-

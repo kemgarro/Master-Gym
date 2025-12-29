@@ -9,12 +9,18 @@ import com.mastergym.backend.measurement.dto.MeasurementRequest;
 import com.mastergym.backend.measurement.dto.MeasurementResponse;
 import com.mastergym.backend.measurement.model.MeasurementEntity;
 import com.mastergym.backend.measurement.repository.MeasurementRepository;
+import com.mastergym.backend.measurement.report.MeasurementDetailReportHtmlBuilder;
+import com.mastergym.backend.measurement.report.MeasurementReportHtmlBuilder;
+import com.mastergym.backend.measurement.report.MeasurementReportPdfRenderer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class MeasurementService {
@@ -66,6 +72,54 @@ public class MeasurementService {
         return toResponse(entity);
     }
 
+    public byte[] buildReportPdf(Long clientId) {
+        if (clientId == null) {
+            throw new BadRequestException("clientId requerido");
+        }
+        Long gymId = GymContext.requireGymId();
+        ClientEntity client = clientRepository.findByIdAndGymId(clientId, gymId)
+                .orElseThrow(() -> new BadRequestException("clientId invalido (no pertenece al gym)"));
+        Specification<MeasurementEntity> spec = specFor(gymId, clientId);
+        List<MeasurementEntity> measurements = measurementRepository.findAll(
+                spec,
+                Sort.by(Sort.Direction.DESC, "fecha")
+        );
+        String html = MeasurementReportHtmlBuilder.build(client, measurements);
+        return MeasurementReportPdfRenderer.render(html);
+    }
+
+    public ReportPdfPayload buildReportPdfPayload(Long clientId) {
+        if (clientId == null) {
+            throw new BadRequestException("clientId requerido");
+        }
+        Long gymId = GymContext.requireGymId();
+        ClientEntity client = clientRepository.findByIdAndGymId(clientId, gymId)
+                .orElseThrow(() -> new BadRequestException("clientId invalido (no pertenece al gym)"));
+        Specification<MeasurementEntity> spec = specFor(gymId, clientId);
+        List<MeasurementEntity> measurements = measurementRepository.findAll(
+                spec,
+                Sort.by(Sort.Direction.DESC, "fecha")
+        );
+        String html = MeasurementReportHtmlBuilder.build(client, measurements);
+        byte[] pdf = MeasurementReportPdfRenderer.render(html);
+        String filename = buildClientFilename(client);
+        return new ReportPdfPayload(pdf, filename);
+    }
+
+    public byte[] buildDetailReportPdf(Long measurementId) {
+        if (measurementId == null) {
+            throw new BadRequestException("measurementId requerido");
+        }
+        Long gymId = GymContext.requireGymId();
+        MeasurementEntity measurement = measurementRepository.findByIdAndGymId(measurementId, gymId)
+                .orElseThrow(() -> new NotFoundException("Medicion no encontrada"));
+        ClientEntity client = measurement.getClient();
+        String html = MeasurementDetailReportHtmlBuilder.build(client, measurement);
+        return MeasurementReportPdfRenderer.render(html);
+    }
+
+    public record ReportPdfPayload(byte[] pdf, String filename) {}
+
     public void delete(Long id) {
         Long gymId = GymContext.requireGymId();
         MeasurementEntity entity = measurementRepository.findByIdAndGymId(id, gymId)
@@ -112,5 +166,18 @@ public class MeasurementService {
         if (value == null) return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static String buildClientFilename(ClientEntity client) {
+        String nombre = client.getNombre() == null ? "" : client.getNombre();
+        String apellido = client.getApellido() == null ? "" : client.getApellido();
+        String fullName = (nombre + " " + apellido).trim();
+        String normalized = Normalizer.normalize(fullName, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "");
+        String slug = normalized.replaceAll("[^A-Za-z0-9]+", "_").replaceAll("^_+|_+$", "");
+        if (slug.isBlank()) {
+            slug = "cliente";
+        }
+        return "mediciones_" + slug + ".pdf";
     }
 }

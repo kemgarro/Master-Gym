@@ -42,3 +42,15 @@ export async function apiSend<T>(
   const text = await res.text();
   return (text ? (JSON.parse(text) as T) : (undefined as T));
 }
+
+export async function apiDownload(path: string): Promise<Blob> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    cache: "no-store",
+    headers: { ...gymHeaders() },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`GET ${path} failed: ${res.status} ${text}`);
+  }
+  return await res.blob();
+}

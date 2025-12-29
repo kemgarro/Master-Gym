@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Download, Eye, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { apiDownload } from "@/lib/api";
 import { MedicionDetail } from "./MedicionDetail";
 import { MedicionForm } from "./MedicionForm";
 import type { Cliente, Medicion } from "../types";
@@ -21,6 +23,8 @@ export function MedicionesTab({ mediciones, clientes, onCreateMedicion, onDelete
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedMedicion, setSelectedMedicion] = useState<Medicion | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const handleAddMedicion = async (medicion: Omit<Medicion, "id">) => {
     await onCreateMedicion(medicion);
@@ -53,6 +57,55 @@ export function MedicionesTab({ mediciones, clientes, onCreateMedicion, onDelete
     if (imc < 25) return "text-green-600";
     if (imc < 30) return "text-yellow-600";
     return "text-red-600";
+  };
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredClientes = normalizedQuery
+    ? clientes.filter((cliente) => {
+        const nombre = `${cliente.nombre} ${cliente.apellido}`.toLowerCase();
+        return nombre.includes(normalizedQuery) || cliente.email?.toLowerCase().includes(normalizedQuery) || cliente.telefono?.includes(normalizedQuery);
+      })
+    : clientes;
+
+  const groupedMediciones = filteredClientes
+    .map((cliente) => ({
+      cliente,
+      mediciones: mediciones
+        .filter((m) => m.clienteId === cliente.id)
+        .slice()
+        .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()),
+    }))
+    .filter((group) => group.mediciones.length > 0);
+
+  const isExpanded = (clienteId: string) => expanded[clienteId] ?? true;
+
+  const toggleExpanded = (clienteId: string) => {
+    setExpanded((prev) => ({
+      ...prev,
+      [clienteId]: !(prev[clienteId] ?? true),
+    }));
+  };
+
+  const handleDownloadClienteReport = async (clienteId: string) => {
+    try {
+      const cliente = clientes.find((c) => c.id === clienteId);
+      const rawName = cliente ? `${cliente.nombre} ${cliente.apellido}`.trim() : "cliente";
+      const safeName = rawName
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-Za-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "cliente";
+      const blob = await apiDownload(`/api/measurements/report/pdf?clientId=${Number(clienteId)}`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mediciones_${safeName}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("No se pudo descargar el PDF.");
+    }
   };
 
   return (
@@ -100,73 +153,133 @@ export function MedicionesTab({ mediciones, clientes, onCreateMedicion, onDelete
               <p className="text-lg text-gray-500">No hay mediciones registradas. Registra la primera medición.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50 hover:bg-gray-50">
-                    <TableHead className="rounded-tl-3xl">Cliente</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Peso</TableHead>
-                    <TableHead>Altura</TableHead>
-                    <TableHead>IMC</TableHead>
-                    <TableHead className="rounded-tr-3xl text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mediciones
-                    .slice()
-                    .reverse()
-                    .map((medicion) => {
-                      const imc = parseFloat(calcularIMC(medicion.peso, medicion.altura));
-                      return (
-                        <TableRow key={medicion.id} className="transition-colors hover:bg-gray-50">
-                          <TableCell>
-                            <div className="font-semibold text-gray-900">{getClienteNombre(medicion.clienteId)}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-gray-900">{new Date(medicion.fecha).toLocaleDateString()}</div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-semibold text-gray-900">{medicion.peso} kg</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-semibold text-gray-900">{medicion.altura} cm</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className={`text-lg font-bold ${getIMCColor(imc)}`}>{imc}</span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleViewDetail(medicion)}
-                                className="rounded-xl text-[#ff5e62] hover:bg-[#ffe5e6] hover:text-[#ff5e62]"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteMedicion(medicion.id)}
-                                className="rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+            <div className="space-y-6 p-6">
+              <div className="max-w-md">
+                <Input
+                  placeholder="Buscar cliente por nombre, correo o telefono..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-12 rounded-2xl border-none bg-white shadow-sm"
+                />
+              </div>
+              {groupedMediciones.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
+                  No hay mediciones para el filtro seleccionado.
+                </div>
+              ) : (
+                groupedMediciones.map((group) => {
+                  const latest = group.mediciones[0];
+                  const latestImc = latest ? parseFloat(calcularIMC(latest.peso, latest.altura)) : 0;
+                  const opened = isExpanded(group.cliente.id);
+                  return (
+                    <div key={group.cliente.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                      <div className="flex w-full flex-wrap items-center justify-between gap-3 text-left">
+                        <div>
+                          <p className="text-sm text-gray-500">Cliente</p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {group.cliente.nombre} {group.cliente.apellido}
+                          </p>
+                          {latest && (
+                            <p className="mt-1 text-xs text-gray-500">Ultima medicion: {new Date(latest.fecha).toLocaleDateString()}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {latest && (
+                            <div className="hidden items-center gap-3 rounded-full bg-[#fff4f0] px-3 py-1 text-xs font-semibold text-gray-700 md:flex">
+                              <span>Peso: {latest.peso} kg</span>
+                              <span>IMC: {latestImc}</span>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                </TableBody>
-              </Table>
+                          )}
+                          <div className="rounded-full bg-[#ffe5e6] px-3 py-1 text-sm font-semibold text-[#ff5e62]">
+                            {group.mediciones.length} medicion{group.mediciones.length !== 1 ? "es" : ""}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDownloadClienteReport(group.cliente.id)}
+                            className="rounded-xl text-[#ff5e62] hover:bg-[#ffe5e6] hover:text-[#ff5e62]"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleExpanded(group.cliente.id)}
+                            className="rounded-xl text-gray-500 hover:bg-gray-100"
+                          >
+                            <ChevronDown className={`h-4 w-4 transition ${opened ? "rotate-180" : ""}`} />
+                          </Button>
+                        </div>
+                      </div>
+                      {opened && (
+                        <div className="mt-4 overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-gray-50 hover:bg-gray-50">
+                                <TableHead className="rounded-tl-3xl">Fecha</TableHead>
+                                <TableHead>Peso</TableHead>
+                                <TableHead>Altura</TableHead>
+                                <TableHead>IMC</TableHead>
+                                <TableHead className="rounded-tr-3xl text-right">Acciones</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {group.mediciones.map((medicion) => {
+                                const imc = parseFloat(calcularIMC(medicion.peso, medicion.altura));
+                                return (
+                                  <TableRow key={medicion.id} className="transition-colors hover:bg-gray-50">
+                                    <TableCell>
+                                      <div className="text-sm text-gray-900">{new Date(medicion.fecha).toLocaleDateString()}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <span className="font-semibold text-gray-900">{medicion.peso} kg</span>
+                                    </TableCell>
+                                    <TableCell>
+                                      <span className="font-semibold text-gray-900">{medicion.altura} cm</span>
+                                    </TableCell>
+                                    <TableCell>
+                                      <span className={`text-lg font-bold ${getIMCColor(imc)}`}>{imc}</span>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <div className="flex justify-end gap-2">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleViewDetail(medicion)}
+                                          className="rounded-xl text-[#ff5e62] hover:bg-[#ffe5e6] hover:text-[#ff5e62]"
+                                        >
+                                          <Eye className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleDeleteMedicion(medicion.id)}
+                                          className="rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-3xl">
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto rounded-3xl">
           <DialogHeader>
             <DialogTitle className="text-2xl">Detalle de Medición</DialogTitle>
             <DialogDescription>Mediciones completas del cliente</DialogDescription>

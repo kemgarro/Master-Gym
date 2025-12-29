@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { apiDownload } from "@/lib/api";
 import type { Cliente, Medicion, Pago } from "../types";
 
 interface ClienteReporteDialogProps {
@@ -43,68 +44,25 @@ export function ClienteReporteDialog({ cliente, open, onOpenChange, pagos, medic
   const totalPagado = pagos.reduce((sum, p) => sum + p.monto, 0);
   const ultimoPago = pagos.length > 0 ? pagos.slice().sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())[0] : null;
 
-  const handleExportarReporte = () => {
-    let reporte = `==============================================\n`;
-    reporte += `REPORTE INDIVIDUAL - MASTERGYM\n`;
-    reporte += `==============================================\n\n`;
-    reporte += `DATOS PERSONALES\n`;
-    reporte += `Nombre: ${cliente.nombre} ${cliente.apellido}\n`;
-    reporte += `Correo: ${cliente.email}\n`;
-    reporte += `Teléfono: ${cliente.telefono}\n`;
-    reporte += `Estado: ${cliente.estado.toUpperCase()}\n\n`;
-
-    reporte += `MEMBRESÍA\n`;
-    reporte += `Tipo: ${cliente.tipoMembresia}\n`;
-    reporte += `Fecha inicio: ${new Date(cliente.fechaInicio).toLocaleDateString("es-CR")}\n`;
-    reporte += `Fecha vencimiento: ${
-      cliente.fechaVencimiento ? new Date(cliente.fechaVencimiento).toLocaleDateString("es-CR") : "Sin membresia"
-    }\n\n`;
-
-    if (cliente.contactoEmergencia) {
-      reporte += `CONTACTO DE EMERGENCIA\n`;
-      reporte += `${cliente.contactoEmergencia}\n\n`;
+  const handleExportarReporte = async () => {
+    try {
+      const rawName = `${cliente.nombre} ${cliente.apellido}`.trim();
+      const safeName = rawName
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-Za-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "cliente";
+      const blob = await apiDownload(`/api/measurements/report/pdf?clientId=${Number(cliente.id)}`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mediciones_${safeName}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("No se pudo descargar el PDF.");
     }
-
-    reporte += `HISTORIAL DE PAGOS (${pagos.length})\n`;
-    reporte += `${"=".repeat(80)}\n`;
-    pagos
-      .slice()
-      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-      .forEach((pago) => {
-        reporte += `${new Date(pago.fecha).toLocaleDateString("es-CR").padEnd(15)} | ${colones
-          .format(pago.monto)
-          .padEnd(15)} | ${pago.metodoPago.padEnd(15)} | ${pago.tipoPago}\n`;
-      });
-    reporte += `\nTotal pagado: ${colones.format(totalPagado)}\n\n`;
-
-    reporte += `HISTORIAL DE MEDICIONES (${mediciones.length})\n`;
-    reporte += `${"=".repeat(80)}\n`;
-    mediciones
-      .slice()
-      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-      .forEach((medicion) => {
-        const imc = (medicion.peso / Math.pow(medicion.altura / 100, 2)).toFixed(1);
-        reporte += `${new Date(medicion.fecha).toLocaleDateString("es-CR").padEnd(15)} | Peso: ${medicion.peso}kg | Altura: ${
-          medicion.altura
-        }cm | IMC: ${imc}\n`;
-      });
-
-    if (cliente.observaciones) {
-      reporte += `\nOBSERVACIONES\n`;
-      reporte += `${cliente.observaciones}\n`;
-    }
-
-    reporte += `\n==============================================\n`;
-    reporte += `Reporte generado el ${new Date().toLocaleString("es-CR")}\n`;
-    reporte += `==============================================\n`;
-
-    const blob = new Blob([reporte], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `reporte-${cliente.nombre}-${cliente.apellido}-${new Date().toISOString().split("T")[0]}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -123,7 +81,7 @@ export function ClienteReporteDialog({ cliente, open, onOpenChange, pagos, medic
               className="rounded-xl bg-gradient-to-r from-[#ff5e62] to-[#ff9966] text-white shadow-lg"
             >
               <Download className="mr-2 h-4 w-4" />
-              Exportar
+              Descargar PDF
             </Button>
           </div>
         </DialogHeader>

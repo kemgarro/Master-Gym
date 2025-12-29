@@ -9,7 +9,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,6 +45,24 @@ public class MeasurementController {
     @GetMapping("/{id}")
     public MeasurementResponse getById(@PathVariable Long id) {
         return measurementService.getById(id);
+    }
+
+    @GetMapping("/{id}/report/pdf")
+    public ResponseEntity<byte[]> downloadDetailReport(@PathVariable Long id) {
+        byte[] pdf = measurementService.buildDetailReportPdf(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"medicion_" + id + ".pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping("/report/pdf")
+    public ResponseEntity<byte[]> downloadReport(@RequestParam Long clientId) {
+        MeasurementService.ReportPdfPayload payload = measurementService.buildReportPdfPayload(clientId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + payload.filename() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(payload.pdf());
     }
 
     @DeleteMapping("/{id}")
