@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Bell, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { MessageCircle, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -276,10 +276,10 @@ export function ClientesTab({
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEnviarRecordatorio(cliente.id)}
-                            className="group relative rounded-xl text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                            aria-label="Enviar recordatorio"
+                            className="group relative rounded-xl text-green-600 hover:bg-green-50 hover:text-green-700"
+                            aria-label="Enviar por WhatsApp"
                           >
-                            <Bell className="h-4 w-4" />
+                            <MessageCircle className="h-4 w-4" />
                             <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-max -translate-x-1/2 rounded-xl bg-gradient-to-r from-[#ff5e62] to-[#ff9966] px-3 py-2 text-xs font-semibold text-white shadow-lg opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:-translate-y-1">
                               Enviar recordatorio
                             </span>

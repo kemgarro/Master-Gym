@@ -30,11 +30,13 @@ public class BackupService {
     }
 
     public BackupResponse run(String providedToken) {
-        if (!backupToken.isBlank()) {
-            if (providedToken == null || !backupToken.equals(providedToken)) {
-                auditService.log("BACKUP", "backup", null, Map.of("success", false, "reason", "invalid_token"));
-                return new BackupResponse(false, -1, "Token de respaldo invalido.");
-            }
+        if (backupToken.isBlank()) {
+            auditService.log("BACKUP", "backup", null, Map.of("success", false, "reason", "token_not_configured"));
+            return new BackupResponse(false, -1, "Token de respaldo no configurado.");
+        }
+        if (providedToken == null || !backupToken.equals(providedToken)) {
+            auditService.log("BACKUP", "backup", null, Map.of("success", false, "reason", "invalid_token"));
+            return new BackupResponse(false, -1, "Token de respaldo invalido.");
         }
 
         Path path = Paths.get(scriptPath);
