@@ -54,7 +54,7 @@ function Ensure-Java() {
   $env:JAVA_HOME = $resolvedJavaHome
   $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 
-  $versionLine = (& java -version 2>&1 | Select-Object -First 1)
+  $versionLine = Get-JavaVersionLine
   if ($versionLine -notmatch '"(\d+)\.') {
     Fail("No se pudo leer la version de Java. Instala Java 21.")
   }
@@ -62,6 +62,11 @@ function Ensure-Java() {
   if ($major -ne 21) {
     Fail("Version de Java no soportada: $versionLine`nInstala Java 21.")
   }
+}
+
+function Get-JavaVersionLine() {
+  $output = & cmd /c "java -version 2>&1"
+  return ($output | Select-Object -First 1)
 }
 
 function Persist-JavaHome() {
@@ -119,7 +124,7 @@ Persist-JavaHome
 
 "Install started: $(Get-Date -Format s)" | Out-File -FilePath $installLog
 "Node: $((& node -v).Trim())" | Add-Content -Path $installLog
-("Java: " + ((& java -version 2>&1 | Select-Object -First 1))) | Add-Content -Path $installLog
+("Java: " + (Get-JavaVersionLine)) | Add-Content -Path $installLog
 "JAVA_HOME: $env:JAVA_HOME" | Add-Content -Path $installLog
 
 Run-Logged $uiDir "npm install" "npm" @("install")
