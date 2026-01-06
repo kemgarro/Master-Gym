@@ -17,10 +17,11 @@ export function setAuthToken(token: string | null) {
   }
 }
 
-function authHeaders() {
+function authHeaders(): Record<string, string> {
   const token = getAuthToken();
-  if (!token) return {};
-  return { Authorization: `Bearer ${token}` };
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
 }
 
 export async function apiLogin(username: string, password: string): Promise<{ token: string; tokenType: string; expiresAt: string }> {

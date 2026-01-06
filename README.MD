@@ -10,9 +10,10 @@ Stack: **Java 21 + Spring Boot + PostgreSQL + Next.js (React)**.
 ### Backend
 - **Java (JDK)**: Eclipse Temurin / OpenJDK **21.0.9 LTS**
 - **Gradle**: se usa **Gradle Wrapper** (incluido en el repo) → no instalar Gradle manualmente
+- El instalador ajusta `JAVA_HOME` de forma permanente para el usuario si es necesario.
 
 ### Frontend (UI)
-- **Node.js**: **v22.18.0**
+- **Node.js**: **v22.18.0 (o 20.x LTS)**
 - **npm**: **10.9.3**
 - **Next.js**: **16.0.10**
 - **React**: **19.2.1**
@@ -148,7 +149,7 @@ Java: openjdk 21.0.9 2025-10-21 LTS
 
 Gradle (wrapper): 9.2.1
 
-Node: v22.18.0
+Node: v22.18.0 (o 20.x)
 
 npm: 10.9.3
 

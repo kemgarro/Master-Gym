@@ -5,13 +5,13 @@ Este documento describe la instalacion completa para entregar MasterGym en una P
 ## Requisitos (instalar una sola vez)
 
 1) Java 21 (JDK)
-2) Node.js 20 (LTS)
+2) Node.js 20 o 22 (LTS)
 3) PostgreSQL 14+
 
 ### Descargas oficiales
 
 - Java 21 (JDK): https://adoptium.net/temurin/releases/?version=21
-- Node.js 20 (LTS): https://nodejs.org/en/download
+- Node.js 20/22 (LTS): https://nodejs.org/en/download
 - PostgreSQL 14+: https://www.postgresql.org/download/
 
 ### Verificar versiones instaladas
@@ -24,7 +24,7 @@ node -v
 psql --version
 ```
 
-Debe mostrar Java 21, Node 20 y PostgreSQL 14+.
+Debe mostrar Java 21, Node 20 o 22 y PostgreSQL 14+.
 
 ## Paso 1: Configurar la base de datos local
 
@@ -82,6 +82,7 @@ Esto hace:
 - Instala dependencias de la UI.
 - Genera build del backend y frontend.
 - Crea el icono MasterGym en el escritorio.
+- Ajusta `JAVA_HOME` de forma permanente para el usuario si es necesario.
 
 ## Paso 5: Uso diario
 
